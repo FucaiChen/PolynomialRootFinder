@@ -4,11 +4,12 @@
 using namespace std;
 
 void test_func() {
-  std::array<double, 3> coeff{1, 2, 0};
-  math::polynomial::Polynomial1D<double, 3> polynomial1(coeff.data());
-  math::polynomial::PolynomialRootFinder<double, 3> solver;
+  static constexpr int32_t N = 4;
+  std::array<double, N> coeff{0.0, 1.0, 2, 1.0};
+  math::polynomial::Polynomial1D<double, N> polynomial1(coeff.data());
+  math::polynomial::PolynomialRootFinder<double, N> solver;
   std::int32_t roots_num;
-  std::array<double, 3> real_roots;
+  std::array<double, N> real_roots;
   solver.FindAllRealRoot(polynomial1, &roots_num, &real_roots[0]);
 
   std::cout << "poly roots num = " << roots_num << std::endl;
