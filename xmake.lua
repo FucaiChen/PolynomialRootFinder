@@ -1,11 +1,15 @@
 add_rules("mode.debug", "mode.release")
 
+add_requires("eigen", {system = false})
+
 target("polynomial_root_finder")
     set_languages("c++20")
     set_optimize("fastest")
     set_kind("binary")
+    
     add_includedirs("./")
     add_files("src/*.cpp")
+    add_packages("eigen")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

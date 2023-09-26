@@ -11,8 +11,10 @@ concept FloatType = std::is_floating_point_v<T>;
 
 template <typename T>
 concept PolynomialItf = requires(T polynomial) {
-  std::invoke(&T::eval, polynomial, typename T::DateType());
-  std::invoke(&T::coeff_address, polynomial);
+  polynomial.size();
+  polynomial.order();
+  polynomial.eval(typename T::DateType());
+  polynomial.coeff_address();
 };
 
 } // namespace polynomial

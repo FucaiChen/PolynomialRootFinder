@@ -11,7 +11,17 @@ template <FloatType T, int32_t N> class Polynomial1D {
 public:
   typedef T DateType;
 
+  explicit Polynomial1D(const T* coeff) {
+    for (int32_t i = 0; i <= N; ++i) {
+      coeff_[i] = coeff[i];
+    }
+  }
+
   void eval(const T t) const;
+
+  int32_t size() const { return coeff_num_; }
+
+  int32_t order() const {return order_; }
 
   const T *coeff_address() const { return coeff_.data(); }
 
