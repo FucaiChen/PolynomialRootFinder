@@ -146,7 +146,6 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
         real_roots[2] = base + scale * std::cos((theta - k2Pi) / 3);
       } else  {
         // delta is zero: three same roots or one + two same roots
-        const F base = - b / 3;
         const F alpha_cbrt = std::cbrt(alpha); 
         real_roots[0] = base + alpha_cbrt * 2;
         if (alpha < std::numeric_limits<F>::min()) {
