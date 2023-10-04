@@ -7,16 +7,16 @@
 using namespace std;
 
 void test_func() {
-  typedef float D;
+  typedef double D;
   static constexpr int32_t N = 3;
-  std::array<D, N + 1> coeff{0.0, 2, -3, 1.0};
+  std::array<D, N + 1> coeff{0, -1, 0, 1};
   math::polynomial::Polynomial1D<D, N> polynomial1(coeff.data());
   math::polynomial::PolynomialRootFinder<D, N> solver;
   std::int32_t roots_num;
   std::array<D, N> real_roots;
 
   struct timeval t_begin, t_end;
-  static constexpr int32_t kLoop = 1000000;
+  static constexpr int32_t kLoop = 1e9;
   gettimeofday(&t_begin,NULL);
   for(int i = 0; i < kLoop; ++i) {
     solver.FindAllRealRoot(polynomial1, &roots_num, &real_roots[0]);
@@ -37,6 +37,9 @@ void test_func() {
 int main(int argc, char **argv) {
 
   cout << "hello world!" << endl;
+
+  std::cout << "double epsilon = " << std::numeric_limits<double>::epsilon() << std::endl;
+  std::cout << "float epsilon = " << std::numeric_limits<float>::epsilon() << std::endl;
 
   test_func();
   return 0;

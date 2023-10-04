@@ -15,6 +15,13 @@ enum RootSolverStatus {
   kSuccess = 2,
 };
 
+enum FValueSign {
+  kPositive = 1,
+  kNegative = 2,
+  kZero = 3,
+};
+
+
 template <FloatType F, int32_t Deg> class PolynomialRootFinder {
 public:
 
@@ -73,7 +80,7 @@ template <FloatType F> class PolynomialRootFinder<F, 2> {
       const F& a = coeff_ptr[2];
       const F& b = coeff_ptr[1];
       const F& c = coeff_ptr[0];
-      const F den = 2 * a;
+      const F den = a + a;
       const F delta_sq = b * b - 4 * a * c;
       if (delta_sq < F()) {
         *root_num = 0;
@@ -100,11 +107,17 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
   FindAllRealRoot(const PolynomialItf auto &polynomial, int32_t *const root_num, 
                   F * const real_roots) {
     assert(polynomial.order() >= Deg);
+
+    static constexpr F k2Pi = M_PI + M_PI;
+    static constexpr F kPiFrac23 = k2Pi / 3;
+    static constexpr F kCosPiFrac23 = std::cos(kPiFrac23);
+    static constexpr F kSinPiFrac23 = std::sin(kPiFrac23);
+
     const F* coeff_ptr = polynomial.coeff_address();
-    if (std::fabs(coeff_ptr[3]) <= std::numeric_limits<F>::min()) {
+    if (std::fabs(coeff_ptr[3]) <= std::numeric_limits<F>::epsilon()) {
       return PolynomialRootFinder<F, 2>::FindAllRealRoot(polynomial, root_num, real_roots);
     } else {
-      const F a = coeff_ptr[3];
+      const F& a = coeff_ptr[3];
       
       const F b = coeff_ptr[2] / a; // speed up
       const F b_sq = b * b;
@@ -122,14 +135,15 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
       const F beta_cub = beta * beta * beta;
       const F delta = alpha_sq + beta_cub;
       const F base = - b / 3;
-      if (delta > std::numeric_limits<F>::min()) {
+
+      if (delta > std::numeric_limits<F>::epsilon()) {
         // delta is positive: one roots
         *root_num = 1;
         
         const F delta_sqrt = std::sqrt(delta);
         real_roots[0] = base + std::cbrt(alpha + delta_sqrt) + std::cbrt(alpha - delta_sqrt);
 
-      } else if (delta < - std::numeric_limits<F>::min()){
+      } else if (delta < - std::numeric_limits<F>::epsilon()){
         // delta is negative: three roots
         *root_num = 3;
 
@@ -140,15 +154,20 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
 
         const F scale = beta_abs_sqrt + beta_abs_sqrt;
         
-        static constexpr F k2Pi = M_PI + M_PI;
-        real_roots[0] = base + scale * std::cos(theta / 3);
-        real_roots[1] = base + scale * std::cos((theta + k2Pi) / 3);
-        real_roots[2] = base + scale * std::cos((theta - k2Pi) / 3);
+        const F gamma = theta / 3;
+        const F s_cos_gamma = scale * std::cos(gamma);
+        const F s_sin_gamma = scale * std::sin(gamma);
+
+        const F cc = s_cos_gamma * kCosPiFrac23;
+        const F ss = s_sin_gamma * kSinPiFrac23;
+        real_roots[0] = base + s_cos_gamma;//base + scale * std::cos(theta / 3);
+        real_roots[1] = base + (cc + ss);// base + scale * std::cos((theta + k2Pi) / 3);
+        real_roots[2] = base + (cc - ss);// base + scale * std::cos((theta - k2Pi) / 3);
       } else  {
         // delta is zero: three same roots or one + two same roots
         const F alpha_cbrt = std::cbrt(alpha); 
         real_roots[0] = base + alpha_cbrt * 2;
-        if (alpha < std::numeric_limits<F>::min()) {
+        if (alpha < std::numeric_limits<F>::epsilon()) {
           *root_num = 1;
         } else {
           *root_num = 2;
