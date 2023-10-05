@@ -38,7 +38,7 @@ public:
     if (std::fabs(coeff_ptr[Deg]) <= std::numeric_limits<F>::min()) {
       return PolynomialRootFinder<F, Deg - 1>::FindAllRealRoot(polynomial, root_num, real_roots);
     } else {
-      //todo: using eigen get roots
+      //todo: using Eigen get roots
       return RootSolverStatus::kSuccess;
     }
   }
@@ -179,6 +179,141 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
   }
 };
 
+
+
+template <FloatType F> class PolynomialRootFinder<F, 4> { 
+  public:
+  static std::optional<RootSolverStatus>
+  FindAllRealRoot(const PolynomialItf auto &polynomial, int32_t *const root_num, 
+                  F * const real_roots) {
+    assert(polynomial.order() >= Deg);
+
+    const F* coeff_ptr = polynomial.coeff_address();
+    if (std::fabs(coeff_ptr[4]) <= std::numeric_limits<F>::epsilon()) {
+      return PolynomialRootFinder<F, 3>::FindAllRealRoot(polynomial, root_num, real_roots);
+    } else {
+      const F& a = coeff_ptr[4];
+      const F b = coeff_ptr[3] / a;
+      const F c = coeff_ptr[2] / a;
+      const F d = coeff_ptr[1] / a; 
+      const F e = coeff_ptr[0] / a; 
+
+      const F b_sq = b * b;
+      const F b_cub = b_sq * b;
+      const F b_qua = b_sq * b_sq;
+
+      const F bc = b * c;
+      const F b_sq_c = b_sq * c;
+      
+      const F bd = b * d;
+
+      static constexpr F n_frac_3_8 = - static_cast<F>(3) / static_cast<F>(8);
+      static constexpr F n_3_256 = - static_cast<F>(3) / static_cast<F>(256);
+      
+      const F alpha = n_frac_3_8 * b_sq + c;
+      const F alpha_sq = alpha * alpha;
+      const F alpha_cub = alpha_sq * alpha;
+
+      const F beta = b_cub / 8 - bc / 2 + d;
+      const F gamma = n_3_256 * b_qua + b_sq_c / 16 - bd / 4 + e;
+
+      const F base = - b / 4;
+
+      if (std::fabs(beta) < std::numeric_limits<F>::epsilon()) { 
+        // beta == 0
+        const F alpha_sq_M_4_gamma = alpha_sq - 4 * gamma;
+        
+        if (alpha_sq_M_4_gamma < - std::numeric_limits<F>::epsilon()) {
+          // exist none root
+          *root_num = 0;
+          return RootSolverStatus::kErrorInput;
+        } else if (alpha_sq_M_4_gamma > std::numeric_limits<F>::epsilon()){
+          *root_num = 2;
+          const F offset = std::sqrt(std::fabs(alpha - std::sqrt(alpha_sq_M_4_gamma))/ 2);
+          real_roots[0] = base + offset;
+          real_roots[1] = base - offset;
+          return RootSolverStatus::kSuccess;
+        } else {
+          *root_num = 1;
+          real_roots[0] = base;
+          return RootSolverStatus::kSuccess;
+        }
+
+      } else {
+        // beta != 0
+        const F P = - alpha_sq / 12 - gamma;
+        const F P_cub = P * P * P;
+        const F Q = - alpha_cub / 108 + alpha * gamma / 3 - beta * beta / 8;
+        const F Q_sq = Q * Q;
+        F temp = Q_sq / 4 + P_cub / 27;
+        if (temp < - std::numeric_limits<F>::epsilon()) {
+          *root_num = 0;
+          return RootSolverStatus::kErrorInput;
+        }
+        temp = std::max(F(), temp);
+        const F R = Q / 2 + std::sqrt(temp);
+        
+        if (R < -std::numeric_limits<F>::epsilon()) {
+          *root_num = 0;
+          return RootSolverStatus::kErrorInput;
+        }
+        const F U = std::cbrt(R);
+
+        static constexpr F n_frac_5_6 = - static_cast<F>(5) / static_cast<F>(6);
+        F y = n_frac_5_6 * alpha;
+        if (std::fabs(U) < std::numeric_limits<F>::epsilon()) {
+          y -= std::cbrt(Q);
+        } else {
+          y += U - P / U / 3;
+        }
+
+        const F alpha_2y = alpha + y + y;
+        if (alpha_2y < std::numeric_limits<F>::epsilon()) {
+          *root_num = 0;
+          return RootSolverStatus::kErrorInput;
+        }
+        const F alpha_2y_sqrt = std::sqrt(alpha_2y);
+        
+        const F alpha3_2y = alpha_2y + alpha + alpha;
+        const F beta2_div_alpha_2y_sqrt = (beta + beta) / alpha_2y_sqrt;
+        
+        const F temp_p = - (alpha3_2y + beta2_div_alpha_2y_sqrt);
+        const F temp_n = - (alpha3_2y - beta2_div_alpha_2y_sqrt);
+
+        *root_num = 0;
+        if (temp_p > std::numeric_limits<F>::epsilon()) {
+          const F temp_p_sqrt = std::sqrt(temp_p);
+          real_roots[*root_num] = base + (alpha_2y_sqrt + temp_p_sqrt) / 2;
+          ++(*root_num);
+          real_roots[*root_num] = base + (alpha_2y_sqrt - temp_p_sqrt) / 2;
+          ++(*root_num);
+        } else if (temp_p < - std::numeric_limits<F>::epsilon()) {
+          // none root for this case
+        } else {
+          real_roots[*root_num] = base + alpha_2y_sqrt / 2;
+          ++(*root_num);
+        }
+
+        if (temp_n > std::numeric_limits<F>::epsilon()) {
+          const F temp_n_sqrt = std::sqrt(temp_n);
+          real_roots[*root_num] = base + (- alpha_2y_sqrt + temp_n_sqrt) / 2;
+          ++(*root_num);
+          real_roots[*root_num] = base + (- alpha_2y_sqrt - temp_n_sqrt) / 2;
+          ++(*root_num);
+        } else if (temp_p < - std::numeric_limits<F>::epsilon()) {
+          // none root for this case
+        } else {
+          if (std::fabs(temp_p) > std::numeric_limits<F>::epsilon()) {
+            real_roots[*root_num] = base + alpha_2y_sqrt / 2;
+            ++(*root_num);
+          }
+        }
+        return RootSolverStatus::kSuccess;
+      }
+    }
+
+  }
+};
 
 
 } // namespace polynomial
