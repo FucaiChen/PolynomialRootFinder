@@ -1,6 +1,6 @@
 [
 {
   "directory": "/home/fucai/project/polynomial_root_finder",
-  "arguments": ["/usr/local/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-I.", "-DNDEBUG", "-o", "build/.objs/polynomial_root_finder/linux/x86_64/release/src/main.cpp.o", "src/main.cpp"],
-  "file": "src/main.cpp"
+  "arguments": ["/usr/local/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-I.", "-DGTEST_HAS_PTHREAD=1", "-I", "/usr/local/include", "-DNDEBUG", "-o", "build/.objs/unit_test/linux/x86_64/release/test/polynomial_root_finder_test.cc.o", "test/polynomial_root_finder_test.cc"],
+  "file": "test/polynomial_root_finder_test.cc"
 }]

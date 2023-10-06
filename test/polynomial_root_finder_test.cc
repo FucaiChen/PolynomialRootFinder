@@ -1,3 +1,5 @@
+#include <gtest/gtest.h>
+
 #include "inc/polynomial.hpp"
 #include "inc/polynomial_root_finder.hpp"
 #include <iostream>
@@ -7,7 +9,7 @@
 #include <algorithm>
 
 #include <eigen3/Eigen/Dense>
-
+#include <gperftools/profiler.h>
 using namespace std;
 
 
@@ -36,27 +38,33 @@ void GeneratePolyCoeff(const std::array<T, Deg>& roots,
  * @param deg 
  */
 template <typename T, int32_t Deg>
-void TestPolynomialRootFinder() {
+void PolynomialRootFinderSpeedTest() {
   constexpr int32_t N = Deg + 1;
 
 
   std::array<T, Deg> roots_bench;
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dis(1, 2);
+  std::uniform_real_distribution<> dis(0, 10);
 
   std::generate(roots_bench.begin(), roots_bench.end(), 
   [&dis, &gen]()->T{return dis(gen);});
+
+
+  std::array<T, N> coeff;
+  GeneratePolyCoeff<T, Deg>(roots_bench, coeff);
+
 
   std::cout << "benchmark roots = ";
   std::for_each(roots_bench.cbegin(), roots_bench.cend(), 
     [](const T& data) {std::cout << data << ", ";});
   std::cout << std::endl;
 
-
-
-  std::array<T, N> coeff;
-  GeneratePolyCoeff<T, Deg>(roots_bench, coeff);
+  std::cout << "poly coeff = ";
+  for (int32_t i = 0 ; i < coeff.size(); ++i) {
+    std::cout << coeff[i] << ",\t";
+  }
+  std::cout << std::endl;
 
 
   math::polynomial::Polynomial1D<T, Deg> polynomial1(coeff.data());
@@ -65,7 +73,7 @@ void TestPolynomialRootFinder() {
   std::array<T, Deg> real_roots;
 
   struct timeval t_begin, t_end;
-  static constexpr int32_t kLoop = 1;
+  static constexpr int32_t kLoop = 1e8;
   gettimeofday(&t_begin,NULL);
   for(int i = 0; i < kLoop; ++i) {
     solver.FindAllRealRoot(polynomial1, &roots_num, &real_roots[0]);
@@ -83,33 +91,6 @@ void TestPolynomialRootFinder() {
   }
 };
 
-void TestCubicPolynomial() {
-  typedef double D;
-  static constexpr int32_t N = 3;
-  std::array<D, N + 1> coeff{0, -1, 0, 1};
-  math::polynomial::Polynomial1D<D, N> polynomial1(coeff.data());
-  math::polynomial::PolynomialRootFinder<D, N> solver;
-  std::int32_t roots_num;
-  std::array<D, N> real_roots;
-
-  struct timeval t_begin, t_end;
-  static constexpr int32_t kLoop = 1e9;
-  gettimeofday(&t_begin,NULL);
-  for(int i = 0; i < kLoop; ++i) {
-    solver.FindAllRealRoot(polynomial1, &roots_num, &real_roots[0]);
-  }
-  gettimeofday(&t_end,NULL);
-
-  const double time_us = (t_end.tv_sec - t_begin.tv_sec) * 1e6 +
-  (t_end.tv_usec - t_begin.tv_usec);
-  std::cout << "time = " << time_us << " us"
-  << " av time = " << time_us / kLoop * 1e3 << " ns" << std::endl;
-
-  std::cout << "poly roots num = " << roots_num << std::endl;
-  for (int32_t i = 0 ; i < roots_num; ++i) {
-    std::cout << "root[" << i << "] = " << real_roots[i] << std::endl;
-  }
-}
 
 template <typename T>
 void TestGeneratePolyCoeff() {
@@ -139,15 +120,20 @@ void TestGeneratePolyCoeff() {
 
 }
 
-int main(int argc, char **argv) {
+// int main(int argc, char **argv) {
+//   //  ProfilerStart("root_finder.prof");
 
-  // std::cout << "double epsilon = " << std::numeric_limits<double>::epsilon() << std::endl;
-  // std::cout << "float epsilon = " << std::numeric_limits<float>::epsilon() << std::endl;
 
-  TestPolynomialRootFinder<double, 3>();
 
-  // TestCubicPolynomial();
 
-  // TestGeneratePolyCoeff<double>();
-  return 0;
+//   // TestGeneratePolyCoeff<double>();
+//   // ProfilerStop();
+//   return 0;
+// }
+
+
+int main(int argc, char** argv){
+	testing::InitGoogleTest(&argc, argv);
+  PolynomialRootFinderSpeedTest<double, 3>();
+	return RUN_ALL_TESTS();
 }

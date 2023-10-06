@@ -54,7 +54,7 @@ template <FloatType F> class PolynomialRootFinder<F, 1> {
   public:
   static std::optional<RootSolverStatus>
   FindAllRealRoot(const PolynomialItf auto &polynomial, int32_t *const root_num, F * const real_roots) {
-    assert(polynomial.order() >= Deg);
+    assert(polynomial.order() >= 1);
     const auto coeff_ptr = polynomial.coeff_address();
     if (std::fabs(coeff_ptr[1]) <= std::numeric_limits<F>::min()) {
       *root_num = 0;
@@ -72,7 +72,7 @@ template <FloatType F> class PolynomialRootFinder<F, 2> {
   public:
   static std::optional<RootSolverStatus>
   FindAllRealRoot(const PolynomialItf auto &polynomial, int32_t *const root_num, F * const real_roots) {
-    assert(polynomial.order() >= Deg);
+    assert(polynomial.order() >= 2);
     const F* coeff_ptr = polynomial.coeff_address();
     if (std::fabs(coeff_ptr[2]) <= std::numeric_limits<F>::min()) {
       return PolynomialRootFinder<F, 1>::FindAllRealRoot(polynomial, root_num, real_roots);
@@ -106,7 +106,7 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
   static std::optional<RootSolverStatus>
   FindAllRealRoot(const PolynomialItf auto &polynomial, int32_t *const root_num, 
                   F * const real_roots) {
-    assert(polynomial.order() >= Deg);
+    assert(polynomial.order() >= 3);
 
     static constexpr F k2Pi = M_PI + M_PI;
     static constexpr F kPiFrac23 = k2Pi / 3;
@@ -129,12 +129,12 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
 
       const F bc = b * c; 
 
-      const F alpha = bc / 6 - b_cub / 27 - d / 2;
+      const F alpha = bc / static_cast<F>(6) - b_cub / static_cast<F>(27) - d / static_cast<F>(2);
       const F alpha_sq = alpha * alpha;
-      const F beta = c / 3 - b_sq / 9;
+      const F beta = c / static_cast<F>(3) - b_sq / static_cast<F>(9);
       const F beta_cub = beta * beta * beta;
       const F delta = alpha_sq + beta_cub;
-      const F base = - b / 3;
+      const F base = - b / static_cast<F>(3);
 
       if (delta > std::numeric_limits<F>::epsilon()) {
         // delta is positive: one roots
@@ -146,6 +146,7 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
       } else if (delta < - std::numeric_limits<F>::epsilon()){
         // delta is negative: three roots
         *root_num = 3;
+        // std::cout << "debug code line = " << __LINE__ << std::endl;
 
         const F beta_abs = std::fabs(beta);
         const F beta_abs_sqrt = std::sqrt(beta_abs);
@@ -154,7 +155,7 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
 
         const F scale = beta_abs_sqrt + beta_abs_sqrt;
         
-        const F gamma = theta / 3;
+        const F gamma = theta / static_cast<F>(3);
         const F s_cos_gamma = scale * std::cos(gamma);
         const F s_sin_gamma = scale * std::sin(gamma);
 
@@ -166,7 +167,7 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
       } else  {
         // delta is zero: three same roots or one + two same roots
         const F alpha_cbrt = std::cbrt(alpha); 
-        real_roots[0] = base + alpha_cbrt * 2;
+        real_roots[0] = base + alpha_cbrt + alpha_cbrt;
         if (alpha < std::numeric_limits<F>::epsilon()) {
           *root_num = 1;
         } else {
@@ -180,16 +181,17 @@ template <FloatType F> class PolynomialRootFinder<F, 3> {
 };
 
 
-
+#if 0 // not ready yet
 template <FloatType F> class PolynomialRootFinder<F, 4> { 
   public:
   static std::optional<RootSolverStatus>
   FindAllRealRoot(const PolynomialItf auto &polynomial, int32_t *const root_num, 
                   F * const real_roots) {
-    assert(polynomial.order() >= Deg);
+    assert(polynomial.order() >= 1);
 
     const F* coeff_ptr = polynomial.coeff_address();
     if (std::fabs(coeff_ptr[4]) <= std::numeric_limits<F>::epsilon()) {
+      std::cout << "debug code = " << __LINE__ << std::endl;
       return PolynomialRootFinder<F, 3>::FindAllRealRoot(polynomial, root_num, real_roots);
     } else {
       const F& a = coeff_ptr[4];
@@ -226,6 +228,7 @@ template <FloatType F> class PolynomialRootFinder<F, 4> {
         if (alpha_sq_M_4_gamma < - std::numeric_limits<F>::epsilon()) {
           // exist none root
           *root_num = 0;
+          std::cout << "debug code = " << __LINE__ << std::endl;
           return RootSolverStatus::kErrorInput;
         } else if (alpha_sq_M_4_gamma > std::numeric_limits<F>::epsilon()){
           *root_num = 2;
@@ -236,6 +239,7 @@ template <FloatType F> class PolynomialRootFinder<F, 4> {
         } else {
           *root_num = 1;
           real_roots[0] = base;
+          std::cout << "debug code = " << __LINE__ << std::endl;
           return RootSolverStatus::kSuccess;
         }
 
@@ -248,6 +252,8 @@ template <FloatType F> class PolynomialRootFinder<F, 4> {
         F temp = Q_sq / 4 + P_cub / 27;
         if (temp < - std::numeric_limits<F>::epsilon()) {
           *root_num = 0;
+          std::cout << "debug code = " << __LINE__ 
+            << " temp = " << temp << std::endl;
           return RootSolverStatus::kErrorInput;
         }
         temp = std::max(F(), temp);
@@ -255,6 +261,7 @@ template <FloatType F> class PolynomialRootFinder<F, 4> {
         
         if (R < -std::numeric_limits<F>::epsilon()) {
           *root_num = 0;
+          std::cout << "debug code = " << __LINE__ << std::endl;
           return RootSolverStatus::kErrorInput;
         }
         const F U = std::cbrt(R);
@@ -270,6 +277,7 @@ template <FloatType F> class PolynomialRootFinder<F, 4> {
         const F alpha_2y = alpha + y + y;
         if (alpha_2y < std::numeric_limits<F>::epsilon()) {
           *root_num = 0;
+          std::cout << "debug code = " << __LINE__ << std::endl;
           return RootSolverStatus::kErrorInput;
         }
         const F alpha_2y_sqrt = std::sqrt(alpha_2y);
@@ -308,13 +316,14 @@ template <FloatType F> class PolynomialRootFinder<F, 4> {
             ++(*root_num);
           }
         }
+        std::cout << "debug code = " << __LINE__ << std::endl;
         return RootSolverStatus::kSuccess;
       }
     }
 
   }
 };
-
+#endif
 
 } // namespace polynomial
 } // namespace math

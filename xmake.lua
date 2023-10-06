@@ -1,15 +1,27 @@
-add_rules("mode.debug", "mode.release")
+add_rules("mode.release")
 
 add_requires("eigen", {system = false})
+add_requires("profiler", {system = true})
+add_requires("gtest", {system = true})
 
 target("polynomial_root_finder")
     set_languages("c++20")
     set_optimize("fastest")
-    set_kind("binary")
+    set_kind("static")
+    -- add_cxflags("-g")
     
-    add_includedirs("./")
-    add_files("src/*.cpp")
     add_packages("eigen")
+    add_packages("profiler")
+
+target("unit_test")
+    set_languages("c++20")
+    set_optimize("fastest")
+    set_kind("binary")
+
+    add_includedirs("./")
+    add_files("test/*.cc")
+	add_packages("gtest")
+    add_deps("polynomial_root_finder")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

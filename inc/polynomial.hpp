@@ -17,6 +17,10 @@ public:
     }
   }
 
+  void trans(const T delta) {
+    coeff_[0] += delta;
+  }
+
   void eval(const T t) const;
 
   int32_t size() const { return coeff_num_; }
